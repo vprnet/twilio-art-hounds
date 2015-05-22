@@ -9,25 +9,25 @@ import sys
 
 
 # THE LANDING PAGE - COMPLETE INTRODUCTION, INSTRUCTIONS, THEN RECORD
-def welcomeResponse(environ):
+def welcomeResponse(path):
 	return """
 <Response>
-	<Play>http://"""+environ['SERVER_NAME']+"""/twilio-welcome.mp3</Play>
+	<Play>"""+path+"""twilio-welcome.mp3</Play>
 	<Record maxLength="60" transcribe="true" action="playback.xml" />
 	<Hangup/>
 </Response>"""
 
 
 # THE PLAYBACK PAGE: INSTRUCTIONS, THEN PLAY THEIR MESSAGE BACK
-def playBackResponse(environ,filename):
+def playBackResponse(path,filename):
 	return """
 <Response>
 	<Gather numDigits="1" method="POST" action="rerecord.xml?filename="""+filename+"""" >
-		<Play>http://"""+environ['SERVER_NAME']+"""/twilio-playback-1.mp3</Play>
+		<Play>"""+path+"""twilio-playback-1.mp3</Play>
 		<Pause />
 		<Play>""" + filename + """</Play>
 		<Pause />
-		<Play>http://"""+environ['SERVER_NAME']+"""/twilio-playback-2.mp3</Play>
+		<Play>"""+path+"""twilio-playback-2.mp3</Play>
 	</Gather>
 </Response>"""
 
@@ -35,10 +35,10 @@ def playBackResponse(environ,filename):
 # THE RERECORD PAGE: DELETE THE PREVIOUS RECORDING VIA THE API, THEN RECORD NEW MESSAGE
 #	Twilio apparently already deletes or records over this file... [only one recording per call on Twilio???]
 #	so there is no need for the above code to delete the file via the API
-def rerecordResponse(environ):
+def rerecordResponse(path):
 	return """
 <Response>
-	<Play>http://"""+environ['SERVER_NAME']+"""/twilio-rerecord.mp3</Play>
+	<Play>"""+path+"""twilio-rerecord.mp3</Play>
 	<Record maxLength="60" transcribe="true" action="playback.xml" />
 </Response>"""
 
@@ -50,10 +50,13 @@ def rerecordResponse(environ):
 ##
 #
 def application(environ, start_response):
+	directory = 'twilio-art-hounds'
+	path = 'http://'+environ['SERVER_NAME']+'/'+directory+'/'
+
 	query = environ.get("QUERY_STRING", "")
 	filename = query.split('&')[0]
 	if filename=="welcome.xml":
-		content = welcomeResponse(environ)	
+		content = welcomeResponse(path)	
 
 	elif filename=="playback.xml":
 		try:
@@ -65,10 +68,10 @@ def application(environ, start_response):
 		request_body = environ['wsgi.input'].read(request_body_size)
 		d = parse_qs(request_body)
 		filename = d.get('RecordingUrl',[''])[0]
-		content = playBackResponse(environ,filename)
+		content = playBackResponse(path,filename)
 
 	elif filename=="rerecord.xml":
-		content = rerecordResponse(environ)
+		content = rerecordResponse(path)
 
 	else:
 		content = 'error'
