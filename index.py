@@ -9,25 +9,25 @@ import sys
 
 
 # THE LANDING PAGE - COMPLETE INTRODUCTION, INSTRUCTIONS, THEN RECORD
-def welcomeResponse():
+def welcomeResponse(environ):
 	return """
 <Response>
-	<Play>twilio-welcome.mp3</Play>
+	<Play>http://"""+environ['SERVER_NAME']+"""/twilio-welcome.mp3</Play>
 	<Record maxLength="60" transcribe="true" action="playback.xml" />
 	<Hangup/>
 </Response>"""
 
 
 # THE PLAYBACK PAGE: INSTRUCTIONS, THEN PLAY THEIR MESSAGE BACK
-def playBackResponse(filename):
+def playBackResponse(environ,filename):
 	return """
 <Response>
 	<Gather numDigits="1" method="POST" action="rerecord.xml?filename="""+filename+"""" >
-		<Play>twilio-playback-1.mp3</Play>
+		<Play>http://"""+environ['SERVER_NAME']+"""/twilio-playback-1.mp3</Play>
 		<Pause />
 		<Play>""" + filename + """</Play>
 		<Pause />
-		<Play>twilio-playback-2.mp3</Play>
+		<Play>http://"""+environ['SERVER_NAME']+"""/twilio-playback-2.mp3</Play>
 	</Gather>
 </Response>"""
 
@@ -35,10 +35,10 @@ def playBackResponse(filename):
 # THE RERECORD PAGE: DELETE THE PREVIOUS RECORDING VIA THE API, THEN RECORD NEW MESSAGE
 #	Twilio apparently already deletes or records over this file... [only one recording per call on Twilio???]
 #	so there is no need for the above code to delete the file via the API
-def rerecordResponse():
+def rerecordResponse(environ):
 	return """
 <Response>
-	<Play>twilio-rerecord.mp3</Play>
+	<Play>http://"""+environ['SERVER_NAME']+"""/twilio-rerecord.mp3</Play>
 	<Record maxLength="60" transcribe="true" action="playback.xml" />
 </Response>"""
 
@@ -53,7 +53,7 @@ def application(environ, start_response):
 	query = environ.get("QUERY_STRING", "")
 	filename = query.split('&')[0]
 	if filename=="welcome.xml":
-		content = welcomeResponse()	
+		content = welcomeResponse(environ)	
 
 	elif filename=="playback.xml":
 		try:
@@ -65,10 +65,10 @@ def application(environ, start_response):
 		request_body = environ['wsgi.input'].read(request_body_size)
 		d = parse_qs(request_body)
 		filename = d.get('RecordingUrl',[''])[0]
-		content = playBackResponse(filename)
+		content = playBackResponse(environ,filename)
 
 	elif filename=="rerecord.xml":
-		content = rerecordResponse()
+		content = rerecordResponse(environ)
 
 	else:
 		content = 'error'
