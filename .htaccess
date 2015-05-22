@@ -1,0 +1,10 @@
+#rewrite all filenames and subdirectories to index.py
+	Options +FollowSymlinks
+	RewriteEngine On
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule ^([^?]*) index.py?$1 [L,QSA]	
+
+#rewrite home directory to index.py	
+#this is actually already done in httpd.conf, but I'll leave it here anyway...
+	DirectoryIndex index.py
